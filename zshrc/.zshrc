@@ -71,8 +71,8 @@ alias reset="git reset HEAD"
 alias reset1="git reset HEAD~1"
 alias main="git checkout main"
 alias use="nrm use"
-# alias template="npx degit Simon-He95/vitesse-lite"
 alias unproxy="git config --global --unset http.proxy && git config --global --unset https.proxy"
+alias proxy="git config --global http.proxy http://127.0.0.1:57932 && git config --global https.proxy https://127.0.0.1:57932"
 alias pullmaster="git pull origin master"
 alias pullmain="git pull origin main"
 alias flog="git reflog"
@@ -84,7 +84,6 @@ alias see="ps -ef|grep"
 
 run() {
   command="$2"
-
   if [ "$2" = "" ]; then
     pnpm run $1
     return
@@ -153,7 +152,11 @@ clone() {
   str1=${str##*/}
   result=${str1%.*}
   echo "正在clone $result"
-  git clone $str && code $result
+  if [ ! $2 ]; then
+    git clone $str && echo "下载完成,正在打开 $$result" && code $result && cd $result && echo '正在下载依赖' && ni
+  else
+    git clone $str && echo "下载完成,正在打开 $$result" && code $result && cd $result && echo '正在下载依赖' && ni || ni || ni || echo '安装依赖失败，请重新尝试' && echo "正在执行 nr $2" && nr $2 || eval ${2}
+  fi
 }
 
 # template
@@ -163,7 +166,11 @@ template() {
     return 0
   fi
   echo "正在创建$1目录,下载vitesse-lite模板,请稍等..."
-  npx degit Simon-He95/vitesse-lite $1 && echo "正在打开$1" && code $1
+  if [ ! $2 ]; then
+    npx degit Simon-He95/vitesse-lite $1 && echo "正在打开$1" && code $1 && cd $1 && echo '正在下载依赖' && ni
+  else
+    npx degit Simon-He95/vitesse-lite $1 && echo "正在打开$1" && code $1 && cd $1 && echo '正在下载依赖' && ni || ni || ni || echo '安装依赖失败，请重新尝试' && echo "正在执行 nr $2" && nr $2 || eval ${2}
+  fi
 }
 
 # remove
@@ -172,8 +179,18 @@ remove() {
     echo "请输入要删除的目录名称"
     return 0
   fi
-  echo "正在删除$1目录"
-  rimraf $1 && echo "删除成功" || echo "删除失败,请重新尝试"
+  if [ ! -f $1 ] && [ ! -d $1 ]; then
+    echo '文件或目录不存在'
+    return 0
+  else
+    echo "正在删除$1目录"
+    rimraf $1 && echo "删除成功" || echo "删除失败,请重新尝试"
+  fi
+}
+
+# 包裹ni
+nii() {
+  ni $* || nio $*
 }
 
 fpath=($fpath "/home/simon/.zfunctions")

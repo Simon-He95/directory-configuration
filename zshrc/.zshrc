@@ -33,7 +33,6 @@ alias release="npm run release"
 alias updateVersion="git add . && git commit -m 'chore: update version' && git push"
 alias clean="git add . && git commit -m 'chore: clean' && git push"
 alias v="npm view"
-alias init="npm init -y"
 alias lock="pnpm install --no-frozen-lockfile"
 
 #--------------------------#
@@ -161,15 +160,31 @@ clone() {
 
 # template
 template() {
+  echo "请输入模板: ts | vue"
+  read templateName
   if [ ! $1 ]; then
     echo "请输入模板名称"
     return 0
   fi
-  echo "正在创建$1目录,下载vitesse-lite模板,请稍等..."
-  if [ ! $2 ]; then
-    npx degit Simon-He95/vitesse-lite $1 && echo "正在打开$1" && code $1 && cd $1 && echo '正在下载依赖' && ni
+
+  if [ $templateName = "ts" ]; then
+    echo "正在创建$1目录,下载starter-ts模板,请稍等..."
+    if [ ! $2 ]; then
+      npx degit Simon-He95/starter-ts $1 && echo "正在打开$1" && code $1 && cd $1 && find ./ -type f -path "./package.json" | xargs sed -i "s:pkg-name:$1:g" && echo '正在下载依赖' && ni
+    else
+      npx degit Simon-He95/starter-ts $1 && echo "正在打开$1" && code $1 && cd $1 && find ./ -type f -path "./package.json" | xargs sed -i "s:pkg-name:$1:g" && echo '正在下载依赖' && ni || ni || ni || echo '安装依赖失败，请重新尝试' && echo "正在执行 nr $2" && nr $2 || eval ${2}
+    fi
   else
-    npx degit Simon-He95/vitesse-lite $1 && echo "正在打开$1" && code $1 && cd $1 && echo '正在下载依赖' && ni || ni || ni || echo '安装依赖失败，请重新尝试' && echo "正在执行 nr $2" && nr $2 || eval ${2}
+    if [ $templateName = "vue" ]; then
+      echo "正在创建$1目录,下载vitesse-lite模板,请稍等..."
+      if [ ! $2 ]; then
+        npx degit Simon-He95/vitesse-lite $1 && echo "正在打开$1" && code $1 && cd $1 && find ./ -type f -path "./package.json" | xargs sed -i "s:pkg-name:$1:g" && echo '正在下载依赖' && ni
+      else
+        npx degit Simon-He95/vitesse-lite $1 && echo "正在打开$1" && code $1 && cd $1 && find ./ -type f -path "./package.json" | xargs sed -i "s:pkg-name:$1:g" && echo '正在下载依赖' && ni || ni || ni || echo '安装依赖失败，请重新尝试' && echo "正在执行 nr $2" && nr $2 || eval ${2}
+      fi
+    else
+      echo "模板不存在"
+    fi
   fi
 }
 
@@ -185,12 +200,104 @@ remove() {
   else
     echo "正在删除$1目录"
     rimraf $1 && echo "删除成功" || echo "删除失败,请重新尝试"
+    return 1
+  fi
+}
+
+# reni
+reni() {
+  remove node_modules
+  if [ $? = 1 ]; then
+    ni || ni || ni
   fi
 }
 
 # 包裹ni
 nii() {
   ni $* || nio $*
+}
+
+# pkginit
+pkginit() {
+  echo "请输入包名:"
+  read pkgname
+  if [ ! $pkgname ]; then
+    echo "包名不能为空"
+    return 0
+  fi
+  if [ -f package.json ]; then
+    echo 'package.json已存在'
+    return 0
+  fi
+
+  touch package.json
+  echo '{
+  "name": "'$pkgname'",
+  "version": "0.0.0",
+  "packageManager": "pnpm@6.32.3",
+  "description": "'$pkgname'",
+  "author": "Simon He",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git + git@github.com:Simon-He95/'$pkgname'.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Simon-He95/'$pkgname'/issues"
+  },
+  "keywords": [
+    "'$pkgname'"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pkgroll --minify",
+    "dev": "pkgroll --watch",
+    "play": "pnpm run -C playground dev",
+    "play:build": "pnpm run -C playground build",
+    "serve": "pnpm run -C playground serve",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest -u",
+    "test:e2e": "cypress open",
+    "prepublishOnly": "nr build",
+    "release": "bumpp --commit --tag --push && pnpm publish"
+  },
+  "dependencies": {
+    "@vueuse/core": "^8.1.1",
+    "vue": "^3.2.36"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^0.25.0",
+    "@types/node": "^17.0.38",
+    "bumpp": "^7.1.1",
+    "eslint": "^8.16.0",
+    "eslint-plugin-n": "^15.2.1",
+    "pkgroll": "^1.3.1",
+    "typescript": "^4.7.2",
+    "vitest": "^0.7.0"
+  },
+  "eslintConfig": {
+    "extends": "@antfu"
+  }
+}' >>package.json
+  if [ $? = 0 ]; then
+    echo '创建成功'
+  else
+    echo '创建失败'
+  fi
 }
 
 fpath=($fpath "/home/simon/.zfunctions")
